@@ -41,6 +41,7 @@
 #include <chrono>
 #include <control_msgs/msg/joint_jog.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 #include <moveit_msgs/srv/servo_command_type.hpp>
 #include <rclcpp/executors/single_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -75,6 +76,8 @@ constexpr int8_t KEYCODE_J = 0x6A;
 constexpr int8_t KEYCODE_T = 0x74;
 constexpr int8_t KEYCODE_W = 0x77;
 constexpr int8_t KEYCODE_E = 0x65;
+constexpr int8_t KEYCODE_O = 0x6F;  // 'o' open gripper
+constexpr int8_t KEYCODE_C = 0x63;  // 'c' close gripper
 }  // namespace
 
 // Some constants used in the Servo Teleop demo
@@ -85,6 +88,7 @@ const std::string JOINT_TOPIC = "/servo_node/delta_joint_cmds";
 const size_t ROS_QUEUE_SIZE = 10;
 const std::string PLANNING_FRAME_ID = "panda_link0";
 const std::string EE_FRAME_ID = "panda_link8";
+const std::string GRIPPER_TOPIC = "/isaac_joint_commands";
 }  // namespace
 
 // A class for reading the key inputs from the terminal
@@ -145,6 +149,7 @@ private:
 
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
   rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr gripper_pub_;
   rclcpp::Client<moveit_msgs::srv::ServoCommandType>::SharedPtr switch_input_;
 
   std::shared_ptr<moveit_msgs::srv::ServoCommandType::Request> request_;
@@ -158,6 +163,7 @@ KeyboardServo::KeyboardServo() : joint_vel_cmd_(1.0), command_frame_id_{ "panda_
 
   twist_pub_ = nh_->create_publisher<geometry_msgs::msg::TwistStamped>(TWIST_TOPIC, ROS_QUEUE_SIZE);
   joint_pub_ = nh_->create_publisher<control_msgs::msg::JointJog>(JOINT_TOPIC, ROS_QUEUE_SIZE);
+  gripper_pub_ = nh_->create_publisher<sensor_msgs::msg::JointState>(GRIPPER_TOPIC, ROS_QUEUE_SIZE);
 
   // Client for switching input types
   switch_input_ = nh_->create_client<moveit_msgs::srv::ServoCommandType>("servo_node/switch_command_type");
@@ -214,6 +220,7 @@ int KeyboardServo::keyLoop()
   puts("Use 't' to select twist ");
   puts("Use 'w' and 'e' to switch between sending command in planning frame or end effector frame");
   puts("'Q' to quit.");
+  puts("Use 'o' to open the gripper and 'c' to close the gripper.");
 
   for (;;)
   {
@@ -355,6 +362,26 @@ int KeyboardServo::keyLoop()
         RCLCPP_DEBUG(nh_->get_logger(), "e");
         RCLCPP_INFO_STREAM(nh_->get_logger(), "Command frame set to: " << EE_FRAME_ID);
         command_frame_id_ = EE_FRAME_ID;
+        break;
+      case KEYCODE_O:
+        RCLCPP_DEBUG(nh_->get_logger(), "o");
+        {
+          sensor_msgs::msg::JointState js;
+          js.name = { "panda_finger_joint1", "panda_finger_joint2" };
+          js.position = { 0.04, 0.04 }; // open position
+          js.header.stamp = nh_->now();
+          gripper_pub_->publish(js);
+        }
+        break;
+      case KEYCODE_C:
+        RCLCPP_DEBUG(nh_->get_logger(), "c");
+        {
+          sensor_msgs::msg::JointState js;
+          js.name = { "panda_finger_joint1", "panda_finger_joint2" };
+          js.position = { 0.0, 0.0 }; // closed position
+          js.header.stamp = nh_->now();
+          gripper_pub_->publish(js);
+        }
         break;
       case KEYCODE_Q:
         RCLCPP_DEBUG(nh_->get_logger(), "quit");
