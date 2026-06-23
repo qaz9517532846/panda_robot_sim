@@ -35,6 +35,8 @@ Panda robot under NVIDIA isaac sim and ROS2.
 
     ``` $ sudo apt install ros-jazzy-moveit```
 
+    ``` $ sudo apt install --reinstall ros-jazzy-ros2-control ros-jazzy-ros2-controllers ros-jazzy-controller-manager ros-jazzy-diagnostic-updater```
+
 ### Run
 
 - Running panda robot using moveit2 planning.
@@ -62,6 +64,8 @@ $ ros2 run panda_teleop panda_teleop
 [2]. Isaacsim moveit tutorial. https://docs.isaacsim.omniverse.nvidia.com/5.1.0/ros2_tutorials/tutorial_ros2_moveit.html
 
 [3]. Isaac ROS. https://nvidia-isaac-ros.github.io/index.html
+
+[4]. topic_based_ros2_control. https://github.com/PickNikRobotics/topic_based_ros2_control
 
 ------
 
